@@ -15,7 +15,7 @@ export async function handler(event){
   const model=process.env.GEMINI_MODEL||"gemini-2.5-flash-lite";
   const u=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
   const r=await fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{temperature:.55,maxOutputTokens:220}})});
-  const x=await r.json(); if(!r.ok) return json(r.status===429?429:502,{error:r.status===429?"무료 사용 한도에 도달했습니다.":"Gemini 응답 오류"});
+  const x=await r.json(); if(!r.ok){console.error("Gemini error",JSON.stringify(x)); return json(r.status===429?429:502,{error:r.status===429?"무료 사용 한도에 도달했습니다.":"Gemini 응답 오류", detail:x?.error?.message||JSON.stringify(x)});}
   const reply=x?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("").trim(); if(!reply)throw Error("empty");
   return json(200,{reply,model});
  }catch(e){return json(502,{error:"Gemini에 연결하지 못했습니다."})}
